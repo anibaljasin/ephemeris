@@ -1,3 +1,4 @@
+import json
 import logging
 from http import HTTPStatus
 
@@ -12,6 +13,37 @@ logger = logging.getLogger(__name__)
 
 
 class EphemerisHandler(Resource):
+
+    def __init__(self):
+        self._ephemeris_svc = EphemerisService()
+
+    def post(self):
+        """
+        Method responsible to handle the http post request. It is used to insert new ephemeris.
+        :return: the saved ephemeris or an error if it couldn't
+        """
+        body = json.loads(request.data)
+        if "name" not in body or "date" not in body:
+            raise MissingParameter("name and date")
+
+        name = body["name"]
+        date = body["date"]
+
+        try:
+            DateUtil.validate_date_format(body["date"])
+        except WrongDateFormat as ex:
+            logger.error(ex)
+            abort(HTTPStatus.BAD_REQUEST, message=str(ex))
+
+        ephemeris = None
+        try:
+            ephemeris = self._ephemeris_svc.create_ephemeris(name=name, date=date)
+        except Exception as ex:
+            logger.error(ex)
+            abort(HTTPStatus.BAD_REQUEST, message=str(ex))
+
+        response = {"ephemeris": ephemeris}
+        return response
 
     def get(self):
         """
@@ -31,8 +63,7 @@ class EphemerisHandler(Resource):
             logger.error(ex)
             abort(HTTPStatus.BAD_REQUEST, message=str(ex))
 
-        ephemeris_svc = EphemerisService()
-        month_ephemeris, todays_ephemeris = ephemeris_svc.get_ephemeris_from_month(day)
+        month_ephemeris, todays_ephemeris = self._ephemeris_svc.get_ephemeris_from_month(day)
 
         response = jsonify({
             f'{day.date()}': todays_ephemeris,

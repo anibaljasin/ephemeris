@@ -4,9 +4,10 @@ from typing import List, Tuple, Dict
 from flask_sqlalchemy import BaseQuery
 from sqlalchemy import and_
 
+from config.db_config import db
+from utils.date_utils import DateUtil
 from models.ephemeris_model import EphemerisModel
 from repository.ephemeris_repository import EphemerisRepository
-from utils.date_utils import DateUtil
 
 
 class EphemerisService:
@@ -79,3 +80,23 @@ class EphemerisService:
             parsed_ephemeris.append(ep)
 
         return parsed_ephemeris
+
+    def create_ephemeris(self, name: str, date: str):
+        """
+        Method responsible to create a new record ephemeris in the database
+        :param name: name of the day to save
+        :param date: date of the ephemeris
+        :return: the ephemeris saved
+        """
+        new_ephemeris = EphemerisRepository()
+        new_ephemeris.name = name
+        new_ephemeris.date = date
+        new_ephemeris.save()
+
+        saved_ephemeris = {
+            'id': new_ephemeris.id,
+            'name': new_ephemeris.name,
+            'date': new_ephemeris.date,
+        }
+
+        return saved_ephemeris

@@ -6,7 +6,7 @@ cursor = conn.cursor()
 cursor.execute('''DROP TABLE IF EXISTS ephemeris_repository''')
 cursor.execute('''CREATE TABLE IF NOT EXISTS ephemeris_repository (
              id INTEGER NOT NULL PRIMARY KEY,
-             name TEXT NOT NULL,
+             name TEXT NOT NULL UNIQUE,
              date TEXT NOT NULL);''')
 
 cursor.execute('''INSERT INTO ephemeris_repository VALUES
