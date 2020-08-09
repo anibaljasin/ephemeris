@@ -14,6 +14,11 @@ logger = logging.getLogger(__name__)
 class EphemerisHandler(Resource):
 
     def get(self):
+        """
+        Method that receives the http get requests in charge of finding the ephemeris from the 'day' query param
+        passed, the 'day' query param is mandatory otherwise will raise MissingParameter exception.
+        :return: the ephemeris from the day passed and the monthly ephemeris.
+        """
         params = request.args
         day = params.get('day')
 
