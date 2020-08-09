@@ -5,7 +5,7 @@ from flask_restful import Resource, abort
 from flask import request, jsonify
 
 from exceptions.exceptions import MissingParameter, WrongDateFormat
-from services.ephemeris import EphemerisService
+from services.ephemeris_service import EphemerisService
 from utils.date_utils import DateUtil
 
 logger = logging.getLogger(__name__)
@@ -26,7 +26,8 @@ class EphemerisHandler(Resource):
             logger.error(ex)
             abort(HTTPStatus.BAD_REQUEST, message=str(ex))
 
-        month_ephemeris, todays_ephemeris = EphemerisService().get_all_ephemeris(day)
+        ephemeris_svc = EphemerisService()
+        month_ephemeris, todays_ephemeris = ephemeris_svc.get_ephemeris_from_month(day)
 
         response = jsonify({
             f'{day.date()}': todays_ephemeris,

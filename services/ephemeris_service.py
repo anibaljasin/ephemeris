@@ -4,13 +4,13 @@ from typing import List
 from sqlalchemy import and_
 
 from models.ephemeris_model import EphemerisModel
-from repository.ephemeris import EphemerisRepository
+from repository.ephemeris_repository import EphemerisRepository
 from utils.date_utils import DateUtil
 
 
 class EphemerisService:
 
-    def get_all_ephemeris(self, day: datetime):
+    def get_ephemeris_from_month(self, day: datetime):
         first_date_of_month = day.replace(day=1)
         last_day_of_month = DateUtil.get_last_date_of_month(day)
         last_date_of_month = day.replace(day=DateUtil.get_last_date_of_month(day))
