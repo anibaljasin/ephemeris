@@ -13,10 +13,11 @@ from handlers.version_handler import VersionHandler
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
 
-def create_app(db_path: str = None) -> Tuple[Flask, SQLAlchemy]:
+def create_app(db_path: str = None, create_db_schema:bool = True) -> Tuple[Flask, SQLAlchemy]:
     """
     function in charge of creating the flask app and attaching the db instance
     :param db_path: path where the db is located
+    :create_db_schema: bool to decide if the app should create the database schema
     :return: a tuple with the flask app instance and the db instance
     """
     access_control_allow_origin = '*'
@@ -32,6 +33,11 @@ def create_app(db_path: str = None) -> Tuple[Flask, SQLAlchemy]:
         db_path = f'sqlite:///{project_dir}/test.db'
 
     app.config['SQLALCHEMY_DATABASE_URI'] = db_path
+
+    if create_db_schema:
+        with app.app_context():
+            db.create_all()
+
     return app, db
 
 
