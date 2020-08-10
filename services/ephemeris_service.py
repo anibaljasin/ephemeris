@@ -1,10 +1,9 @@
 from datetime import datetime
 from typing import List, Tuple, Dict
 
-from flask_sqlalchemy import BaseQuery
 from sqlalchemy import and_
+from flask_sqlalchemy import BaseQuery
 
-from config.db_config import db
 from utils.date_utils import DateUtil
 from models.ephemeris_model import EphemerisModel
 from repository.ephemeris_repository import EphemerisRepository
