@@ -5,7 +5,7 @@ from http import HTTPStatus
 from flask_restful import Resource, abort
 from flask import request, jsonify
 
-from exceptions.exceptions import MissingParameter, WrongDateFormat
+from exceptions.exceptions import MissingParameter, WrongDateFormat, IntegrityError
 from services.ephemeris_service import EphemerisService
 from utils.date_utils import DateUtil
 
@@ -23,14 +23,16 @@ class EphemerisHandler(Resource):
         :return: the saved ephemeris or an error if it couldn't
         """
         body = json.loads(request.data)
-        if "name" not in body or "date" not in body:
-            raise MissingParameter("name and date")
+        if 'name' not in body:
+            raise MissingParameter('name')
+        if 'date' not in body:
+            raise MissingParameter('date')
 
-        name = body["name"]
-        date = body["date"]
+        name = body['name']
+        date = body['date']
 
         try:
-            DateUtil.validate_date_format(body["date"])
+            DateUtil.validate_date_format(body['date'])
         except WrongDateFormat as ex:
             logger.error(ex)
             abort(HTTPStatus.BAD_REQUEST, message=str(ex))
@@ -38,7 +40,7 @@ class EphemerisHandler(Resource):
         ephemeris = None
         try:
             ephemeris = self._ephemeris_svc.create_ephemeris(name=name, date=date)
-        except Exception as ex:
+        except IntegrityError as ex:
             logger.error(ex)
             abort(HTTPStatus.BAD_REQUEST, message=str(ex))
 

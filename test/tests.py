@@ -1,3 +1,4 @@
+import json
 import os
 import sqlite3
 import unittest
@@ -9,7 +10,7 @@ from datetime import datetime
 import pytest
 from parameterized import parameterized
 
-from exceptions.exceptions import WrongDateFormat, MissingParameter
+from exceptions.exceptions import WrongDateFormat, MissingParameter, IntegrityError
 from server import server
 
 
@@ -24,6 +25,7 @@ class TestEndpoints(unittest.TestCase):
         app.config['TESTING'] = True
         self.app = app.test_client()
         self.set_up_db_dummy_data()
+        self.ephemeris_endpoint = '/efemerides'
 
     def set_up_db_dummy_data(self):
         conn = None
@@ -32,7 +34,7 @@ class TestEndpoints(unittest.TestCase):
             cursor = conn.cursor()
             cursor.execute('''CREATE TABLE ephemeris_repository (
                          id INTEGER NOT NULL PRIMARY KEY,
-                         name TEXT NOT NULL,
+                         name TEXT NOT NULL UNIQUE,
                          date TEXT NOT NULL)''')
 
             cursor.execute('''INSERT INTO ephemeris_repository VALUES
@@ -68,7 +70,7 @@ class TestEndpoints(unittest.TestCase):
         ('2020-12-29', 31),
     ])
     def test_ephemeris_passing_right_date(self, day_to_check, expected_month_length):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         key_param = 'day'
         url = f'{endpoint}?{key_param}={day_to_check}'
         response = self.app.get(url)
@@ -85,7 +87,7 @@ class TestEndpoints(unittest.TestCase):
         '16/10/2020',
     ])
     def test_passing_wrong_date_format(self, wrong_date_format):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         key_param = 'day'
         url = f'{endpoint}?{key_param}={wrong_date_format}'
 
@@ -93,7 +95,7 @@ class TestEndpoints(unittest.TestCase):
         self.assertRaises(WrongDateFormat, make_request())
 
     def test_passing_wrong_query_param(self):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         wrong_key_param = 'wrong_key'
         valid_date = '2020-10-10'
         url = f'{endpoint}?{wrong_key_param}={valid_date}'
@@ -102,8 +104,29 @@ class TestEndpoints(unittest.TestCase):
 
         self.assertRaises(MissingParameter, make_request())
 
+    def test_add_new_ephemeris_with_valid_data(self):
+        new_ephemeris = {"name": "dia del murcielago", "date": "2020-12-12"}
+        endpoint = self.ephemeris_endpoint
+        response = self.app.post(endpoint, data=json.dumps(new_ephemeris), content_type='application/json')
+
+        self.assertEqual(response.status_code, HTTPStatus.OK)
+
+        response_json = json.loads(response.data)
+
+        self.assertIsNotNone(response_json["ephemeris"])
+        self.assertEqual(response_json["ephemeris"]["name"], new_ephemeris["name"])
+        self.assertEqual(response_json["ephemeris"]["date"], new_ephemeris["date"])
+
+    def test_add_new_ephemeris_with_missing_date_parameter(self):
+        new_ephemeris = {"name": "dia de la camiseta"}
+        endpoint = self.ephemeris_endpoint
+
+        def make_request(): self.app.post(endpoint, data=json.dumps(new_ephemeris), content_type='application/json')
+
+        self.assertRaises(MissingParameter, make_request)
+
     def test_put_method_not_allowed(self):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         key_param = 'day'
         url = f'{endpoint}?{key_param}=2020-10-01'
 
@@ -111,7 +134,7 @@ class TestEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
 
     def test_delete_method_not_allowed(self):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         key_param = 'day'
         url = f'{endpoint}?{key_param}=2020-10-01'
 
@@ -119,13 +142,12 @@ class TestEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
 
     def test_patch_method_not_allowed(self):
-        endpoint = '/efemerides'
+        endpoint = self.ephemeris_endpoint
         key_param = 'day'
         url = f'{endpoint}?{key_param}=2020-10-01'
 
         response = self.app.patch(url)
         self.assertEqual(response.status_code, HTTPStatus.METHOD_NOT_ALLOWED)
-
 
     def test_server_is_up_and_running(self):
         response = self.app.get('/version', follow_redirects=True)
